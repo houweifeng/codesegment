@@ -1,0 +1,31 @@
+// 以下代码用于获取寄存器信息
+#import <mach/thread_act.h>
+#import <mach/mach_host.h>
+#import <mach/processor_info.h>
+#import <mach/thread_status.h>
+
+void func() {
+#if defined(__arm__)
+typedef arm_thread_state_t struct_thread_state;
+#define thread_state_count ARM_UNIFIED_THREAD_STATE
+#define thread_state ARM_THREAD_STATE
+#elif defined(__arm64__)
+typedef arm_thread_state64_t struct_thread_state;
+#define thread_state_count ARM_UNIFIED_THREAD_STATE
+#define thread_state ARM_THREAD_STATE
+#elif defined(__i386__)
+typedef x86_thread_state32_t struct_thread_state;
+#define thread_state_count x86_THREAD_STATE32_COUNT
+#define thread_state x86_THREAD_STATE32_
+#elif defined(__x86_64)
+typedef x86_thread_state64_t struct_thread_state;
+#define thread_state_count x86_THREAD_STATE64_COUNT
+#define thread_state x86_THREAD_STATE64
+#else
+#endif
+    
+    struct_thread_state oldstate;
+    mach_msg_type_number_t oldstatecnt = thread_state_count;
+    thread_get_state(mach_thread_self(), thread_state, &oldstate, &oldstatecnt);
+    printf("ok");
+}
