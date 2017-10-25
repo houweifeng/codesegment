@@ -1,0 +1,8 @@
+/*
+	该模块根据IDA地址定位native函数并在Frida框架中调用
+*/
+// 获取模块基址
+var func_addr_in_ida = 0x79DE5C;
+var base = Process.enumerateModulesSync()[0];
+var func = new NativeFunction(base.base.add(func_addr_in_ida + 1 - 0x4000), "void", []);
+func(); // call the func
