@@ -1,0 +1,14 @@
+# get all import functions
+def get_import_funcnames():
+    implist = []
+    def imp_cb(ea, name, ord):
+        if not name:
+            pass
+        elif name not in skip_ and not name.startswith("_objc"):
+            implist.append(name)
+        return True
+    
+    nimps = ida_nalt.get_import_module_qty()
+    for i in range(0, nimps):
+        ida_nalt.enum_import_names(i, imp_cb)
+    return implist
