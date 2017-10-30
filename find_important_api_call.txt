@@ -1,12 +1,10 @@
 # find all api call from range(begin, end) for each function
 
-# begin = 0x71AA50 # SSBody
-# end = 0x71B688
+begin = 0x71AA50
+end = 0x824870
 
-begin = 0x71B688 # SSFilterTramp
-end = 0x725350
-
-skip_name = ['___modsi3', '__Unwind_SjLj_Resume', '__Unwind_SjLj_Register', '__Unwind_SjLj_Unregister', '_memset', '___stack_chk_fail']
+skip_name = ['___modsi3', '___umodsi3', '_dispatch_once', 'memcpy', '__Unwind_SjLj_Resume', '__Unwind_SjLj_Register', '__Unwind_SjLj_Unregister', '_memset', '___stack_chk_fail']
+inc_lib = ['/usr/lib/libxml2.2.dylib', '/usr/lib/libsqlite3.dylib', '/usr/lib/libSystem.B.dylib', '/System/Library/Frameworks/CFNetwork.framework/CFNetwork', '/System/Library/Frameworks/SystemConfiguration.framework/SystemConfiguration']
 
 # get all import functions
 def get_import_funcnames():
@@ -21,7 +19,8 @@ def get_import_funcnames():
     nimps = ida_nalt.get_import_module_qty()
     for i in range(0, nimps):
         modname = ida_nalt.get_import_module_name(i)
-        ida_nalt.enum_import_names(i, imp_cb)
+        if modname in inc_lib:
+            ida_nalt.enum_import_names(i, imp_cb)
     return implist
 
 # tranverse function
@@ -49,9 +48,12 @@ for funcbegin in funclist:
             funcname = line.split(" ")[-1]
             if funcname in implist:
                 hitmap[funcbegin].append(funcname)
-        posbegin = posbegin + ida_ua.decode_insn(posbegin)
+        inslen = ida_ua.decode_insn(posbegin)
+        if inslen < 2:
+            inslen = 2
+        posbegin = posbegin + inslen
     count = count + 1
-    print "processed %d/%d" % (count, len(funclist))
+    print "processed %x/%d/%d" % (funcbegin, count, len(funclist))
 for key in hitmap:
     if len(hitmap[key]) > 0:
         print "%x %s" % (key, hitmap[key])
