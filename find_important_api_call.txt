@@ -1,0 +1,57 @@
+# find all api call from range(begin, end) for each function
+
+# begin = 0x71AA50 # SSBody
+# end = 0x71B688
+
+begin = 0x71B688 # SSFilterTramp
+end = 0x725350
+
+skip_name = ['___modsi3', '__Unwind_SjLj_Resume', '__Unwind_SjLj_Register', '__Unwind_SjLj_Unregister', '_memset', '___stack_chk_fail']
+
+# get all import functions
+def get_import_funcnames():
+    implist = []
+    def imp_cb(ea, name, ord):
+        if not name:
+            pass
+        elif name not in skip_name and not name.startswith("_objc"):
+            implist.append(name)
+        return True
+    
+    nimps = ida_nalt.get_import_module_qty()
+    for i in range(0, nimps):
+        modname = ida_nalt.get_import_module_name(i)
+        ida_nalt.enum_import_names(i, imp_cb)
+    return implist
+
+# tranverse function
+def get_all_funcs(begin, end):
+    funclist = []
+    pos = begin - 1
+    while pos <= end:
+        pos = get_next_func(pos)
+        funclist.append(pos)
+    return funclist
+
+funclist = get_all_funcs(begin, end)
+implist = get_import_funcnames()
+
+count = 0
+hitmap = {}
+for funcbegin in funclist:
+    hitmap[funcbegin] = []
+    funcend = get_func_attr(funcbegin, FUNCATTR_END)
+    posbegin = funcbegin
+    posend = funcend
+    while posbegin < posend:
+        line = GetDisasm(posbegin)
+        if line.startswith("BL"):
+            funcname = line.split(" ")[-1]
+            if funcname in implist:
+                hitmap[funcbegin].append(funcname)
+        posbegin = posbegin + ida_ua.decode_insn(posbegin)
+    count = count + 1
+    print "processed %d/%d" % (count, len(funclist))
+for key in hitmap:
+    if len(hitmap[key]) > 0:
+        print "%x %s" % (key, hitmap[key])
