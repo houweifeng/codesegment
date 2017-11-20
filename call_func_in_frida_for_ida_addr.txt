@@ -6,3 +6,9 @@ var func_addr_in_ida = 0x79DE5C;
 var base = Process.enumerateModulesSync()[0];
 var func = new NativeFunction(base.base.add(func_addr_in_ida + 1 - 0x4000), "void", []);
 func(); // call the func
+
+// 16进制打印NSString
+hexdump(str.dataUsingEncoding_(4).bytes()).split("\n")
+
+// 16进制打印NSData
+hexdumo(data.bytes()).split("\n")
