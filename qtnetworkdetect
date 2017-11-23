@@ -1,0 +1,24 @@
+    uint begin = QDateTime::currentDateTimeUtc().toMSecsSinceEpoch();
+    network_request.setUrl(QUrl(QString("http://www.cctv.com")));
+    QNetworkReply* reply = manage->get(network_request);
+
+    QEventLoop eventLoop;
+    QObject::connect(reply, &QNetworkReply::finished, &eventLoop, &QEventLoop::quit);
+    QObject::connect(reply, &QNetworkReply::metaDataChanged, &eventLoop, &QEventLoop::quit);
+    QObject::connect(reply, &QNetworkReply::encrypted, &eventLoop, &QEventLoop::quit);
+    QObject::connect(reply, &QNetworkReply::redirected, &eventLoop, &QEventLoop::quit);
+    eventLoop.exec();
+    int statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+
+    if (reply->error() == QNetworkReply::NoError)
+    {
+        QByteArray bytes = reply->readAll();
+        uint end = QDateTime::currentDateTimeUtc().toMSecsSinceEpoch();
+        QMessageBox::information(this, QString::number(end - begin), QString::fromUtf8(bytes));
+        ui->lineEdit->setText(QString::number(end - begin));
+        // QString::fromUtf8(bytes)
+    }
+    else {
+        QMessageBox::information(this, QString("连接失败"), QString(""));
+    }
+    reply->deleteLater();
