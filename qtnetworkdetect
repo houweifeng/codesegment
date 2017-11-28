@@ -1,5 +1,5 @@
-int GetHttpRequest(QString url, QString method, QString postdata, QString& response,
-                       QNetworkProxy proxy=QNetworkProxy(QNetworkProxy::NoProxy), int timeout=5)
+int GetHttpRequest(const QString& url, const QString& method, const QString& postdata, QString& response,
+                   const QNetworkProxy& proxy=QNetworkProxy(QNetworkProxy::NoProxy), int timeout=5)
 {
     QNetworkAccessManager manager;
     QNetworkReply* reply;
@@ -10,12 +10,21 @@ int GetHttpRequest(QString url, QString method, QString postdata, QString& respo
     timer.setSingleShot(true);
     manager.setProxy(proxy);
     request.setUrl(QUrl(url));
-    reply = manager.get(request);
+    if (method == "get")
+    {
+        reply = manager.get(request);
+    }
+    else if (method == "post")
+    {
+        reply = manager.post(request, postdata.toUtf8());
+    }
+    else
+    {
+        return 10001; // Param Error
+    }
 
     QEventLoop eventLoop;
-    QObject::connect(&timer, &QTimer::timeout, &eventLoop, [&istimeout]() {
-        istimeout = true;
-    });
+    QObject::connect(&timer, &QTimer::timeout, &eventLoop, [&istimeout]() { istimeout = true; });
     QObject::connect(&timer, &QTimer::timeout, &eventLoop, &QEventLoop::quit);
     QObject::connect(reply, &QNetworkReply::finished, &eventLoop, &QEventLoop::quit);
     QObject::connect(reply, &QNetworkReply::metaDataChanged, &eventLoop, &QEventLoop::quit);
@@ -27,12 +36,45 @@ int GetHttpRequest(QString url, QString method, QString postdata, QString& respo
     {
         return reply->error(); // 0~500
     }
-    if (timeout)
+    if (istimeout)
     {
-        return 10000; //
+        return 10000; // Time Out
     }
     response = QString::fromUtf8(reply->readAll());
     eventLoop.deleteLater();
     reply->deleteLater();
     return QNetworkReply::NoError;
+}
+
+void MainWindow::on_pushButton_clicked()
+{
+    QString postid = "464926949684"; // 快递单号
+    QString response;
+    QString url = "http://www.kuaidi100.com/autonumber/autoComNum?resultv2=1&text=" + postid;
+    QVector<QString> comCode;
+    if (QNetworkReply::NoError == GetHttpRequest(url, "post", "", response))
+    {
+        QJsonDocument doc = QJsonDocument::fromJson(response.toUtf8());
+        if (doc.isObject())
+        {
+            QJsonObject root = doc.object();
+            if (root.contains("auto"))
+            {
+                QJsonArray arr = root.value("auto").toArray();
+                for (const QJsonValueRef& obj : arr)
+                {
+                    comCode.push_back(obj.toObject().value("comCode").toString());
+                }
+            }
+        }
+    }
+    for (const QString& type : comCode)
+    {
+        url = "http://www.kuaidi100.com/query?type=" + type + "&postid=" + postid;
+        if (QNetworkReply::NoError == GetHttpRequest(url, "post", "", response))
+        {
+            qDebug() << response;
+        }
+    }
+
 }
