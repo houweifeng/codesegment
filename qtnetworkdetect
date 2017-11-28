@@ -1,24 +1,38 @@
-    uint begin = QDateTime::currentDateTimeUtc().toMSecsSinceEpoch();
-    network_request.setUrl(QUrl(QString("http://www.cctv.com")));
-    QNetworkReply* reply = manage->get(network_request);
+int GetHttpRequest(QString url, QString method, QString postdata, QString& response,
+                       QNetworkProxy proxy=QNetworkProxy(QNetworkProxy::NoProxy), int timeout=5)
+{
+    QNetworkAccessManager manager;
+    QNetworkReply* reply;
+    QNetworkRequest request;
+    QTimer timer;
+    bool istimeout = false;
+
+    timer.setSingleShot(true);
+    manager.setProxy(proxy);
+    request.setUrl(QUrl(url));
+    reply = manager.get(request);
 
     QEventLoop eventLoop;
+    QObject::connect(&timer, &QTimer::timeout, &eventLoop, [&istimeout]() {
+        istimeout = true;
+    });
+    QObject::connect(&timer, &QTimer::timeout, &eventLoop, &QEventLoop::quit);
     QObject::connect(reply, &QNetworkReply::finished, &eventLoop, &QEventLoop::quit);
     QObject::connect(reply, &QNetworkReply::metaDataChanged, &eventLoop, &QEventLoop::quit);
     QObject::connect(reply, &QNetworkReply::encrypted, &eventLoop, &QEventLoop::quit);
     QObject::connect(reply, &QNetworkReply::redirected, &eventLoop, &QEventLoop::quit);
     eventLoop.exec();
-    int statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
 
-    if (reply->error() == QNetworkReply::NoError)
+    if (reply->error() != QNetworkReply::NoError)
     {
-        QByteArray bytes = reply->readAll();
-        uint end = QDateTime::currentDateTimeUtc().toMSecsSinceEpoch();
-        QMessageBox::information(this, QString::number(end - begin), QString::fromUtf8(bytes));
-        ui->lineEdit->setText(QString::number(end - begin));
-        // QString::fromUtf8(bytes)
+        return reply->error(); // 0~500
     }
-    else {
-        QMessageBox::information(this, QString("连接失败"), QString(""));
+    if (timeout)
+    {
+        return 10000; //
     }
+    response = QString::fromUtf8(reply->readAll());
+    eventLoop.deleteLater();
     reply->deleteLater();
+    return QNetworkReply::NoError;
+}
