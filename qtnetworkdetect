@@ -1,3 +1,16 @@
+#include <QEventLoop>
+#include <QUrl>
+#include <QString>
+#include <QtNetwork/QNetworkReply>
+#include <QDebug>
+#include <QTimer>
+#include <QtNetwork/QNetworkAccessManager>
+#include <QtNetwork/QNetworkRequest>
+#include <QtNetwork/QNetworkProxy>
+#include <QtCore/QJsonDocument>
+#include <QtCore/QJsonObject>
+#include <QtCore/QJsonArray>
+
 int GetHttpRequest(const QString& url, const QString& method, const QString& postdata, QString& response,
                    const QNetworkProxy& proxy=QNetworkProxy(QNetworkProxy::NoProxy), int timeout=5)
 {
@@ -7,9 +20,11 @@ int GetHttpRequest(const QString& url, const QString& method, const QString& pos
     QTimer timer;
     bool istimeout = false;
 
+    timer.setInterval(timeout);
     timer.setSingleShot(true);
     manager.setProxy(proxy);
     request.setUrl(QUrl(url));
+    request.setHeader(QNetworkRequest::ContentTypeHeader, QVariant("application/x-www-form-urlencoded"));
     if (method == "get")
     {
         reply = manager.get(request);
@@ -27,9 +42,6 @@ int GetHttpRequest(const QString& url, const QString& method, const QString& pos
     QObject::connect(&timer, &QTimer::timeout, &eventLoop, [&istimeout]() { istimeout = true; });
     QObject::connect(&timer, &QTimer::timeout, &eventLoop, &QEventLoop::quit);
     QObject::connect(reply, &QNetworkReply::finished, &eventLoop, &QEventLoop::quit);
-    QObject::connect(reply, &QNetworkReply::metaDataChanged, &eventLoop, &QEventLoop::quit);
-    QObject::connect(reply, &QNetworkReply::encrypted, &eventLoop, &QEventLoop::quit);
-    QObject::connect(reply, &QNetworkReply::redirected, &eventLoop, &QEventLoop::quit);
     eventLoop.exec();
 
     if (reply->error() != QNetworkReply::NoError)
@@ -46,7 +58,7 @@ int GetHttpRequest(const QString& url, const QString& method, const QString& pos
     return QNetworkReply::NoError;
 }
 
-void MainWindow::on_pushButton_clicked()
+void QueryKuaidi()
 {
     QString postid = "464926949684"; // 快递单号
     QString response;
@@ -68,13 +80,18 @@ void MainWindow::on_pushButton_clicked()
             }
         }
     }
+
+    QNetworkProxy proxy;
+    proxy.setType(QNetworkProxy::HttpProxy);
+    proxy.setHostName("127.0.0.1");
+    proxy.setPort(8889);
+    qDebug() << "phase 1";
     for (const QString& type : comCode)
     {
         url = "http://www.kuaidi100.com/query?type=" + type + "&postid=" + postid;
-        if (QNetworkReply::NoError == GetHttpRequest(url, "post", "", response))
+        if (QNetworkReply::NoError == GetHttpRequest(url, "post", "", response, proxy))
         {
             qDebug() << response;
         }
     }
-
 }
