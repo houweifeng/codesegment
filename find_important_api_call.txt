@@ -3,8 +3,9 @@
 begin = 0x71AA50
 end = 0x824870
 
-skip_name = ['___modsi3', '___umodsi3', '_dispatch_once', 'memcpy', '__Unwind_SjLj_Resume', '__Unwind_SjLj_Register', '__Unwind_SjLj_Unregister', '_memset', '___stack_chk_fail']
-inc_lib = ['/usr/lib/libxml2.2.dylib', '/usr/lib/libsqlite3.dylib', '/usr/lib/libSystem.B.dylib', '/System/Library/Frameworks/CFNetwork.framework/CFNetwork', '/System/Library/Frameworks/SystemConfiguration.framework/SystemConfiguration']
+skip_name = ['___modsi3', '___umodsi3', '_dispatch_once', 'memcpy', '__Unwind_SjLj_Resume', '__Unwind_SjLj_Register', '__Unwind_SjLj_Unregister', '_memset', '___stack_chk_fail', '_pthread_mutex_init', '_arc4random', '_dispatch_get_global_queue', '_dispatch_async', '_dispatch_semaphore_signal', '_dispatch_time', '_dispatch_semaphore_wait', '_malloc', '___memset_chk', '__Block_object_assign', '_calloc', '_free', '_memcpy', '_pthread_mutex_lock', '_dispatch_semaphore_create', '___udivsi3', '___fixdfdi',]
+
+inc_lib = ['/usr/lib/libxml2.2.dylib', '/usr/lib/libsqlite3.dylib', '/usr/lib/libSystem.B.dylib', '/System/Library/Frameworks/CFNetwork.framework/CFNetwork', '/System/Library/Frameworks/Foundation.framework/Foundation']
 
 # get all import functions
 def get_import_funcnames():
