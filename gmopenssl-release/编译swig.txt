@@ -1,0 +1,12 @@
+swig -c++ -python test.i
+g++ -c test_wrap.cxx -IC:\Python27_86\include
+g++ -shared test_wrap.o -o _test.pyd -lpython27 -LC:/Python27_86/libs
+
+
+swig -c++ -python pygmssl.i
+gcc -c pygmssl_wrap.cxx -IC:/Python27_86/include/ -I. -lpython27 -LC:/Python27_86/libs -lstdc++
+gcc -shared pygmssl_wrap.o -o _pygmssl.pyd -lpython27 -LC:/Python27_86/libs -LWindows -lstdc++ -lcrypto-1_1
+
+gendef c:/Windows/System32/python27.dll
+dlltool -U -d python27.def -l libpython27.dll.a
+cp libpython27.dll.a c:/Python27/libs
