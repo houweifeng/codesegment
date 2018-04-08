@@ -1,0 +1,1 @@
+cat /proc/3083/maps | grep so | awk {'print $6'} | uniq   获取进程加载动态库
