@@ -1,2 +1,14 @@
 cat /proc/3083/maps | grep so | awk {'print $6'} | uniq   获取进程加载动态库
 find / | grep syscalls.h | while read LINE; do ls -al $LINE; done  对命令结果的每行做操作
+
+函数计时
+#!/bin/bash
+time1=$(date +%s)
+i=0;
+while [ $i -lt 1000 ];
+do
+    #nslookup 10.152.90.41 > /dev/null
+    i=$[$i+1];
+done
+time2=$(date +%s)
+echo $(( $time2 - $time1 ))
