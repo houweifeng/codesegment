@@ -16,8 +16,4 @@ echo $(( $time2 - $time1 ))
 # 获取父进程
 function getppid() { echo `cat /proc/$1/stat | awk {'print $4'}`; }
 function getpidname() { echo `awk -F'\0' '{print $1}' /proc/$1/cmdline`; }
-
-echo $(getppid $1)
-echo $(getpidname $(getppid $1))
-echo $(getppid $(getppid $1))
-echo $(getpidname $(getppid $(getppid $1)))
+function getpidloop() { curpid=${PPID}; while true; do echo ${curpid} $(getpidname ${curpid}); curpid=$(getppid ${curpid}); if [ ${curpid} -eq 1 ]; then break; fi; done; }
