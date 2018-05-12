@@ -8,7 +8,7 @@ import re
 # proxies = { "http": "http://127.0.0.1:9999", "https": "http://127.0.0.1:9999", }
 
 def get_jd_item_info(keyword, dbname, columns):
-    search_url = 'https://search.jd.com/Search?keyword=电动车&enc=utf-8'
+    search_url = 'https://search.jd.com/Search?keyword=%s&enc=utf-8' % keyword
     selector = etree.HTML(requests.get(search_url).content)
     items = selector.xpath("//div[@id='J_goodsList']//img[@data-sku]")
     data_skus = [item.attrib['data-sku'] for item in items]
