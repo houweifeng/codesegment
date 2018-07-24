@@ -28,3 +28,6 @@ def dot2ipint(ip):
 def ipint2dot(ip):
     import socket, struct
     return socket.inet_ntoa(struct.pack("=I", ip))
+ 
+# 获取所有so导出函数
+(find /lib64/*.so /usr/lib64/*.so | while read l;  do nm -D $l | grep T\ | awk '{print $3}' | sed /^$/d | sed /^_/d | while read x;  do echo $l ${x}; done; done) >> /tmp/symbols
