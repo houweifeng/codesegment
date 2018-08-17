@@ -30,7 +30,7 @@ def ipint2dot(ip):
     return socket.inet_ntoa(struct.pack("=I", ip))
  
 # 获取所有so导出函数
-(find /lib64/*.so /usr/lib64/*.so | while read l;  do nm -D $l | grep T\ | awk '{print $3}' | sed /^$/d | sed /^_/d | while read x;  do echo $l ${x}; done; done) >> /tmp/symbols
+(find /lib64/*.so* /usr/lib64/*.so* | while read l;  do nm -D $l | grep "\\(W\|T\\)" | awk '{print $3}' | sed /^$/d | sed /^_/d | while read x;  do echo $l ${x}; done; done) >> /tmp/symbols
 
 # 安装所有msys2包
 pacman -Ss | awk '{if(NR%2==1) print $1}' | while read l; do
