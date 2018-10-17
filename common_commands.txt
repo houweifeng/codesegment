@@ -35,3 +35,19 @@ def ipint2dot(ip):
 # 安装所有msys2包
 pacman -Ss | awk '{if(NR%2==1) print $1}' | while read l; do
     echo Y | pacman -Sy $l;
+    
+find_proc() {
+	for item in $(ls /proc); do
+	  if [ ! -d /proc/$item/fd ]; then
+		continue
+	  fi
+	  count=`ls /proc/$item/fd | wc -w`
+	  if [ $count -gt 100 ]; then 
+		echo "too many fd:" $item, $count
+	  fi
+	  if grep -q libsocket /proc/$item/maps; then
+		echo "contain mod" $item
+	  fi
+	done
+}
+
