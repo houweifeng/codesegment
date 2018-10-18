@@ -18,6 +18,8 @@ function getppid() { echo `cat /proc/$1/stat | awk {'print $4'}`; }
 function getpidname() { echo `awk -F'\0' '{print $1}' /proc/$1/cmdline`; }
 function getpidloop() { curpid=${PPID}; while true; do echo ${curpid} $(getpidname ${curpid}); curpid=$(getppid ${curpid}); if [ ${curpid} -eq 1 ]; then break; fi; done; }
 
+function listwebfile() { curl -s $1/ | sed -n -E "s/.*href=[^>]+>([^<]+)[^ ]*(.*)/\\1\\2/p"; }
+
 # 从web目录读取文件列表
 curl -s $1/ | sed -n -E "s/.*href=[^>]+>([^<]+).*/\\1/p" | sed ':a;N;$!ba;s/\n/\t/g'
 
