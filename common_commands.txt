@@ -53,3 +53,10 @@ find_proc() {
 	done
 }
 
+function get_random_ip() {
+  echo $(dd if=/dev/urandom bs=4 count=1 2>/dev/null | od -An -tu1 | sed -e 's/^ *//' -e 's/  */./g')
+}
+
+function get_random_port() {
+  echo $(od -A n -N 2 -t u2 /dev/urandom)
+}
