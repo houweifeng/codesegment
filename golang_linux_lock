@@ -1,0 +1,60 @@
+// Lockfile : lock file for synchronize
+func Lockfile(path string) bool {
+	var fd = -1
+	if !Exists(path) {
+		var f, e = os.OpenFile(path, os.O_CREATE|os.O_RDWR, 0660)
+		if e == nil {
+			fd = int(f.Fd())
+		}
+	} else {
+		var f, e = os.OpenFile(path, os.O_RDWR, 0660)
+		if e == nil {
+			fd = int(f.Fd())
+		}
+	}
+	if fd < 0 {
+		return false
+	}
+	return syscall.Flock(fd, syscall.LOCK_EX) != nil
+}
+
+// Unlockfile : unlock file for synchronize
+func Unlockfile(path string) bool {
+	var fd = -1
+	if !Exists(path) {
+		var f, e = os.OpenFile(path, os.O_CREATE|os.O_RDWR, 0660)
+		if e == nil {
+			fd = int(f.Fd())
+		}
+	} else {
+		var f, e = os.OpenFile(path, os.O_RDWR, 0660)
+		if e == nil {
+			fd = int(f.Fd())
+		}
+	}
+	if fd < 0 {
+		return false
+	}
+	return syscall.Flock(fd, syscall.LOCK_UN) != nil
+}
+
+// Islockfile : check file is locked
+func Islockfile(path string) bool {
+	var fd = -1
+	if !Exists(path) { // file not exist
+		return false
+	}
+	var f, e = os.OpenFile(path, os.O_CREATE|os.O_RDWR, 0660)
+	if e == nil {
+		fd = int(f.Fd())
+	}
+	if fd < 0 {
+		return false
+	}
+	var islock = false
+	if syscall.Flock(fd, syscall.LOCK_EX|syscall.LOCK_NB) == nil {
+		islock = true
+		syscall.Flock(fd, syscall.LOCK_UN)
+	}
+	return islock
+}
