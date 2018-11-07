@@ -64,3 +64,45 @@ function get_random_port() {
 function get_all_elfs() {
   find / -type f -exec file {} + | grep ELF | awk '{split($0,a,":");print a[1]}'
 }
+
+function myrm() {
+  oriargs=${@:1}
+  isrecurse=false
+  isforce=false
+  files=()
+  for i in "$@"
+  do
+  case $i in
+    -r|-R|--recursize)
+    isrecurse=true
+    shift
+    ;;
+    -f|--force)
+    isforce=true
+    shift
+    ;;
+    --*)
+    shift
+    ;;
+    -*) {
+      if [[ $i == *[r\|R]* ]]; then isrecurse=true; fi
+      if [[ $i == *f* ]]; then isforce=true; fi
+    }
+    shift
+    ;;
+    *) {
+      files[$((${#files[@]}+1))]=$i
+    }
+    ;;
+  esac
+  done
+  if [ "$isrecurse" == false ]; then
+    echo /bin/rm ${oriargs}
+  else
+    if [ "$isforce" == true ]; then
+      forceflag=-f
+    fi
+    echo mkdir -p ~/.trash/$(date "+%Y_%m_%d")
+    echo /bin/mv ${forceflag} ${files[*]} ~/.trash/$(date "+%Y_%m_%d")/
+  fi
+}
