@@ -65,8 +65,18 @@ function get_all_elfs() {
   find / -type f -exec file {} + | grep ELF | awk '{split($0,a,":");print a[1]}'
 }
 
+# 自定义rm函数
+# 0.说明：此函数用于覆盖Linux shell的rm命令
+# 1.生效方式：将该函数直接写入/etc/profile中，或使用脚本方式以source命令引入到/etc/profile中。
+#   新登陆用户直接生效，已登录用户执行source /etc/profile即可生效。
+# 2.函数提供对敏感目录保护，禁止删除根目录及一级目录
+# 3.如果rm命令指定-R/-r/--recursive的递归删除选项，则替换为mv命令，保存在~/.trash/日期/时间/ 下，
+#   这样才有写入权限且不会产生文件覆盖问题
+# 4.去除代码注释时，只对递归选项-R/-r/--recursive执行mv命令，否则强制执行mv领命
+# 注意：如果~/.bashrc ~/.bash_profile等文件中存在影响本函数使用的语句(如alias rm)时需要删除
+
 function rm() {
-  oriargs=${@:1}
+  oriargs=("${@:1}")
   isrecurse=false
   isforce=false
   files=()
@@ -84,28 +94,42 @@ function rm() {
         shift
       ;;
       -*) {
-        if [[ $i == *[r\|R]* ]]; then isrecurse=true; fi
-        if [[ $i == *f* ]]; then isforce=true; fi
+        if [[ $i == *[r\|R]* ]]; then 
+            isrecurse=true
+        fi
+        if [[ $i == *f* ]]; then 
+            isforce=true
+        fi
       }
       shift
       ;;
       *) {
-        files[$((${#files[@]}+1))]=$i
+        if [[ ! $i =~ ^/[^/]*$ ]]; then 
+            files[$((${#files[@]}+1))]=$i
+        else
+            echo skip sensitive $i
+        fi
       }
       ;;
     esac
   done
-  if $isrecurse; then
-    if $isforce; then forceflag=-f; fi
-    mkdir -p ~/.trash/$(date "+%Y_%m_%d")/$(date "+%H%M%S%N")
-    echo /bin/mv ${forceflag} ${files[*]} ~/.trash/$(date "+%Y_%m_%d")/$(date "+%H%M%S%N")/
-    output=$(/bin/mv ${forceflag} ${files[*]} ~/.trash/$(date "+%Y_%m_%d")/$(date "+%H%M%S%N")/)
-    retval=$?
-  else
-    output=$(/bin/rm ${oriargs})
-    retval=$?
-  fi
+  #if $isrecurse; then
+    if $isforce; then 
+        forceflag=-f
+    fi
+    if [[ ${#files[@]} > 0 ]]; then 
+	    newdir=~/.trash/$(date "+%Y_%m_%d")/$(date "+%H%M%S%N")
+        mkdir -p $newdir
+        echo /bin/mv ${forceflag} ${files[*]} $newdir/
+        output=$(/bin/mv ${forceflag} ${files[*]} $newdir/)
+        retval=$?
+    fi
+  #else
+  #  output=$(/bin/rm ${oriargs})
+  #  retval=$?
+  #fi
   echo $output
   return $retval
 }
+
 
