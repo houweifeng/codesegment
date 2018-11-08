@@ -1,66 +1,107 @@
-cat /proc/3083/maps | grep so | awk {'print $6'} | uniq   获取进程加载动态库
-find / | grep syscalls.h | while read LINE; do ls -al $LINE; done  对命令结果的每行做操作
-
-函数计时
 #!/bin/bash
-time1=$(date +%s)
-i=0;
-while [ $i -lt 1000 ];
-do
-    #nslookup 10.152.90.41 > /dev/null
-    i=$[$i+1];
-done
-time2=$(date +%s)
-echo $(( $time2 - $time1 ))
 
-# 获取父进程
-function getppid() { echo `cat /proc/$1/stat | awk {'print $4'}`; }
-function getpidname() { echo `awk -F'\0' '{print $1}' /proc/$1/cmdline`; }
-function getpidloop() { curpid=${PPID}; while true; do echo ${curpid} $(getpidname ${curpid}); curpid=$(getppid ${curpid}); if [ ${curpid} -eq 1 ]; then break; fi; done; }
-
-function listwebfile() { curl -s $1/ | sed -n -E "s/.*href=[^>]+>([^<]+)[^ ]*(.*)/\\1\\2/p"; }
-
-# 从web目录读取文件列表
-curl -s $1/ | sed -n -E "s/.*href=[^>]+>([^<]+).*/\\1/p" | sed ':a;N;$!ba;s/\n/\t/g'
-
-# python ip整数和点分十进制转化
-def dot2ipint(ip):
-    import socket, struct
-    return struct.unpack("=I", socket.inet_aton("10.143.130.42"))[0]
-def ipint2dot(ip):
-    import socket, struct
-    return socket.inet_ntoa(struct.pack("=I", ip))
- 
-# 获取所有so导出函数
-(find /lib64/*.so /usr/lib64/*.so | while read l;  do nm -D $l | grep "\\(W\|T\\)" | awk '{print $3}' | sed /^$/d | sed /^_/d | while read x;  do echo $l ${x}; done; done) >> /tmp/symbols
-
-# 安装所有msys2包
-pacman -Ss | awk '{if(NR%2==1) print $1}' | while read l; do
-    echo Y | pacman -Sy $l;
-    
-find_proc() {
-	for item in $(ls /proc); do
-	  if [ ! -d /proc/$item/fd ]; then
-		continue
-	  fi
-	  count=`ls /proc/$item/fd | wc -w`
-	  if [ $count -gt 100 ]; then 
-		echo "too many fd:" $item, $count
-	  fi
-	  if grep -q libsocket /proc/$item/maps; then
-		echo "contain mod" $item
-	  fi
-	done
+# 获取进程加载动态库
+function getprocmod() {
+  cat /proc/3083/maps | grep so | awk {'print $6'} | uniq  
 }
 
+# 对命令结果的每行做操作
+function doforline() {
+  find / | grep syscalls.h | while read LINE; do 
+    ls -al $LINE; 
+  done  
+}
+
+# 函数计时
+function timetest {
+  time1=$(date +%s)
+  i=0;
+  while [ $i -lt 1000 ]; do
+    #nslookup 10.152.90.41 > /dev/null
+    i=$[$i+1];
+  done
+  time2=$(date +%s)
+  echo $(( $time2 - $time1 ))
+}  
+
+# 获取父进程
+function getppid() { 
+  echo `cat /proc/$1/stat | awk {'print $4'}`; 
+}
+
+# 获取进程名
+function getpidname() { 
+  echo `awk -F'\0' '{print $1}' /proc/$1/cmdline`; 
+}
+
+# 递归获取父进程
+function getpidloop() { 
+  curpid=${PPID}
+  while true; do 
+    echo ${curpid} $(getpidname ${curpid}); 
+    curpid=$(getppid ${curpid})
+    if [ ${curpid} -eq 1 ]; then 
+      break
+    fi
+  done
+}
+
+# 从web目录读取文件列表
+function listwebfile() { 
+  curl -s $1/ | sed -n -E "s/.*href=[^>]+>([^<]+)[^ ]*(.*)/\\1\\2/p"
+  # curl -s $1/ | sed -n -E "s/.*href=[^>]+>([^<]+).*/\\1/p" | sed ':a;N;$!ba;s/\n/\t/g'
+}
+
+# python ip整数和点分十进制转化
+#def dot2ipint(ip):
+#    import socket, struct
+#    return struct.unpack("=I", socket.inet_aton("10.143.130.42"))[0]
+#def ipint2dot(ip):
+#    import socket, struct
+#    return socket.inet_ntoa(struct.pack("=I", ip))
+ 
+# 获取所有so导出函数
+function getexports() {
+  (find /lib64/*.so /usr/lib64/*.so | while read l;  do 
+    nm -D $l | grep "\\(W\|T\\)" | awk '{print $3}' | sed /^$/d | sed /^_/d | while read x;  do 
+      echo $l ${x}
+    done
+  done) >> /tmp/symbols
+
+# 安装所有msys2包
+function getpackage() {
+  pacman -Ss | awk '{if(NR%2==1) print $1}' | while read l; do
+    echo Y | pacman -Sy $l
+  done
+}  
+
+# 检测fd数较多的进程
+function find_proc() {
+  for item in $(ls /proc); do
+    if [ ! -d /proc/$item/fd ]; then
+      continue
+    fi
+    count=`ls /proc/$item/fd | wc -w`
+    if [ $count -gt 100 ]; then 
+      echo "too many fd:" $item, $count
+    fi
+    if grep -q libsocket /proc/$item/maps; then
+      echo "contain mod" $item
+    fi
+  done
+}
+
+# 获取随机IP
 function get_random_ip() {
   echo $(dd if=/dev/urandom bs=4 count=1 2>/dev/null | od -An -tu1 | sed -e 's/^ *//' -e 's/  */./g')
 }
 
+# 获取随机端口
 function get_random_port() {
   echo $(od -A n -N 2 -t u2 /dev/urandom)
 }
 
+# 获取所有elf文件
 function get_all_elfs() {
   find / -type f -exec file {} + | grep ELF | awk '{split($0,a,":");print a[1]}'
 }
