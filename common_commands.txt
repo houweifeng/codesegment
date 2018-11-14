@@ -101,6 +101,17 @@ function get_random_port() {
   echo $(od -A n -N 2 -t u2 /dev/urandom)
 }
 
+# 端口开放检测
+function testport() {
+  ip=$1
+  for port in {1..65535}; do
+    o=$(nc -z -v -w 0 $ip $port 2>&1)
+    if [[ $o =~ succeed ]]; then
+      echo port $ip:$port open
+    fi
+  done
+}
+
 # 获取所有elf文件
 function get_all_elfs() {
   find / -type f -exec file {} + | grep ELF | awk '{split($0,a,":");print a[1]}'
