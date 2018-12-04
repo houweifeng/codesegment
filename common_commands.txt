@@ -184,4 +184,33 @@ function rm() {
   return $retval
 }
 
+# 创建chroot环境
+make_chroot() {
+  maps=(/dev /mnt /proc /selinux /sys)
+  mkdirs=(/home /tmp /root)
+  cpdirs=(/bin /etc /lib /lib64 /opt /sbin /usr /var)
+  root=$1
+  if [ x$1 == x ]; then
+    read -p "Please set root:"
+    root=$REPLY
+  fi
+  if [ ! -d $root ]; then
+    $(mkdir -p $root)
+  else
+    echo use existing root
+  fi
+  echo create directories for chroot
+  for i in ${mkdirs[@]}; do
+    $(mkdir $root/$i)
+  done
+  echo copy directories for chroot
+  for i in ${cpdirs[@]}; do
+    $(cp -rfp $i $root/)
+  done
+  echo map directories for chroot
+  for i in ${maps[@]}; do
+    $(mount --rbind $i $root/$i)
+    $(mount -o remount,rw $root/$i)
+  done
+}
 
