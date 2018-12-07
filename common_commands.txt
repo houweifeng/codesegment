@@ -75,6 +75,11 @@ function getpackage() {
   done
 }  
 
+# 随机字符串
+function randstr {
+  echo $(head /dev/urandom | tr -dc A-Za-z0-9 | head -c $1)
+}
+
 # 检测fd数较多的进程
 function find_proc() {
   for item in $(ls /proc); do
