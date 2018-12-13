@@ -189,6 +189,8 @@ function rm() {
   return $retval
 }
 
+alias screen='screen_n() { /usr/bin/script -c "screen $*"; };screen_n'
+
 # 创建chroot环境
 make_chroot() {
   maps=(/dev /mnt /proc /selinux /sys)
