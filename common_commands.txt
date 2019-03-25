@@ -221,3 +221,17 @@ make_chroot() {
   done
 }
 
+# 比较系统目录结构前后变化
+function diff_dir {
+  oldsnap=snap.old
+  newsnap=snap.new
+  touch $oldsnap $newsnap
+  root=$1
+  if [ x$root == x ]; then
+    root=$PWD
+  fi
+  find $root | grep -v /proc > $oldsnap
+  read -p "Do sth. and press any key to continue" var
+  find $root | grep -v /proc > $newsnap
+  diff $oldsnap $newsnap
+}
